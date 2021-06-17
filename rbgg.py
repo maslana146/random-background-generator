@@ -11,7 +11,7 @@ import aiohttp
 
 parser = argparse.ArgumentParser(
     description='Generating random backgrounds for a given image.')
-parser.add_argument('path', help='path to the image to process')
+parser.add_argument('path', help='path to the image/folder with images to process')
 parser.add_argument('-o', '--out-dir', default='out',
                     help='output directory. Default: out')
 parser.add_argument('-n', '--number', type=int, default=100,
@@ -83,7 +83,7 @@ class ScaleProcessor(Processor):
 
     def process(self, img):
         scale = uniform(self.low, self.high)
-        return cv2.resize(img, (int(max(1, img.shape[1]*scale)), max(1, int(img.shape[0]*scale))))
+        return cv2.resize(img, (int(max(1, img.shape[1] * scale)), max(1, int(img.shape[0] * scale))))
 
 
 class MarginProcessor(Processor):
@@ -93,8 +93,9 @@ class MarginProcessor(Processor):
 
     def process(self, img):
         def rndm(): return max(-0.49, uniform(self.low, self.high))
-        margins = [rndm()]*4 if self.equal else [rndm() for _ in range(4)]
-        a, b, c, d = [int(x*img.shape[:2][i//2])for i, x in enumerate(margins)]
+
+        margins = [rndm()] * 4 if self.equal else [rndm() for _ in range(4)]
+        a, b, c, d = [int(x * img.shape[:2][i // 2]) for i, x in enumerate(margins)]
         img = np.pad(img, ((max(0, a), max(0, b)),
                            (max(0, c), max(0, d)), (0, 0)))
         img = MarginProcessor.unpad(
@@ -117,16 +118,51 @@ class BlurProcessor(Processor):
 
     def process(self, img, wm_shape):
         if random() <= self.probability:
-            blur_low, blur_high = int(self.low*min(
-                wm_shape[0], wm_shape[1])), int(self.high*min(wm_shape[0], wm_shape[1]))
+            blur_low, blur_high = int(self.low * min(
+                wm_shape[0], wm_shape[1])), int(self.high * min(wm_shape[0], wm_shape[1]))
             blur = max(1, randint(blur_low, blur_high))
             img = cv2.blur(img, (blur, blur))
         return img
 
 
+def check_contrast(color1, color2, threshold=2):
+    color1 = check_color(color1)
+    color2 = check_color(color2)
+    L1 = 0.2126 * color1[0] + 0.7152 * color1[1] + 0.0722 * color1[2]
+    L2 = 0.2126 * color2[0] + 0.7152 * color2[1] + 0.0722 * color2[2]
+    if L1 >= L2:
+        ratio = (L1 + 0.05) / (L2 + 0.05)
+    else:
+        ratio = (L2 + 0.05) / (L1 + 0.05)
+    return ratio >= threshold
+
+
+def check_color(color):
+    new_color = [i / 255 for i in color]
+    if new_color[0] <= 0.03928:
+        new_color[0] = new_color[0] / 12.92
+    else:
+        new_color[0] = ((new_color[0] + 0.055) / 1.055) ** 2.4
+    if new_color[1] <= 0.03928:
+        new_color[1] = new_color[1] / 12.92
+    else:
+        new_color[1] = ((new_color[1] + 0.055) / 1.055) ** 2.4
+    if new_color[2] <= 0.03928:
+        new_color[2] = new_color[2] / 12.92
+    else:
+        new_color[2] = ((new_color[2] + 0.055) / 1.055) ** 2.4
+    return tuple(new_color)
+
+
 def get_random_solid_background(shape):
     random_color = np.array(colorsys.hsv_to_rgb(
-        random(), random(), random()))*255
+        random(), random(), random())) * 255
+    if os.path.isdir(args.path):
+        font_color = eval(file_name[:len(file_name) - 4].split('_')[-1])
+        while not check_contrast(random_color, font_color):
+            random_color = np.array(colorsys.hsv_to_rgb(
+                random(), random(), random())) * 255
+
     return np.full((shape[0], shape[1], 3), random_color.astype(np.int32))
 
 
@@ -143,7 +179,7 @@ def combine(background, overlay):
     mask = overlay[..., 3:] / 255.0
     overlay = overlay[..., :3]
     result = (1.0 - mask) * background + mask * overlay
-    return result.astype('uint8'), mask*255
+    return result.astype('uint8'), mask * 255
 
 
 def create_output_dirs(args):
@@ -161,23 +197,23 @@ def read_img(path):
 
 async def generate_imgs(ids, solid_bg_number, generator, args):
     overlays = [generator.next() for _ in ids]
-    backgrounds_solid = [get_random_solid_background(
-        overlays[i].shape) for i, id in enumerate(ids) if id < solid_bg_number]
+    backgrounds_solid = [get_random_solid_background(overlays[i].shape) for i, id in enumerate(ids) if
+                         id < solid_bg_number]
     backgrounds_photo = await asyncio.gather(*[get_random_photo_background(
         overlays[i].shape) for i, id in enumerate(ids) if id >= solid_bg_number])
-    for i, background, overlay in zip(ids, backgrounds_solid+backgrounds_photo, overlays):
+    for i, background, overlay in zip(ids, backgrounds_solid + backgrounds_photo, overlays):
         combined_image, mask = combine(background, overlay)
-        cv2.imwrite(f'{args.out_dir}/{i}.jpg', combined_image)
+        cv2.imwrite(f'{args.out_dir}/{file_name[:len(file_name) - 4]}_{i}.png', combined_image)
         if args.mask:
-            cv2.imwrite(f'{args.mask_out_dir}/{i}.png', mask)
+            cv2.imwrite(f'{args.mask_out_dir}/{file_name[:len(file_name) - 4]}_{i}.png', mask)
 
 
-def run(ids, solid_bg_number, generator, args):
-    asyncio.run(generate_imgs(ids, solid_bg_number, generator, args))
+def run(ids, solid_bg_number, generator, args, loop):
+    loop.run_until_complete(generate_imgs(ids, solid_bg_number, generator, args))
 
 
-def run_singlethread(solid_bg_number, generator, args):
-    run(range(args.number), solid_bg_number, generator, args)
+def run_singlethread(solid_bg_number, generator, args, loop):
+    run(range(args.number), solid_bg_number, generator, args, loop)
 
 
 def run_multithread(solid_bg_number, generator, args):
@@ -191,12 +227,23 @@ def run_multithread(solid_bg_number, generator, args):
 if __name__ == '__main__':
     args = parser.parse_args()
     create_output_dirs(args)
-    im = read_img(args.path)
-    generator = ImagePermutationGenerator(im, args)
-
-    solid_bg_number = args.number - int(args.photos*args.number)
-
-    if args.single_core or args.number <= 100:
-        run_singlethread(solid_bg_number, generator, args)
+    loop = asyncio.get_event_loop()
+    if os.path.isdir(args.path):
+        for file_name in os.listdir(args.path):
+            if file_name.endswith('.png'):
+                im = read_img(f"{args.path}/{file_name}")
+                generator = ImagePermutationGenerator(im, args)
+                solid_bg_number = args.number - int(args.photos * args.number)
+                if args.single_core or args.number <= 100:
+                    run_singlethread(solid_bg_number, generator, args, loop)
+                else:
+                    run_multithread(solid_bg_number, generator, args)
     else:
-        run_multithread(solid_bg_number, generator, args)
+        im = read_img(args.path)
+        file_name = args.path
+        generator = ImagePermutationGenerator(im, args)
+        solid_bg_number = args.number - int(args.photos * args.number)
+        if args.single_core or args.number <= 100:
+            run_singlethread(solid_bg_number, generator, args, loop)
+        else:
+            run_multithread(solid_bg_number, generator, args)

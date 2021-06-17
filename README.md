@@ -22,8 +22,7 @@ Arguments:
 
 ```
 positional arguments:
-  path                  path to the image to process
-
+  path                  path to the image/folder with images to process
 optional arguments:
   -h, --help            show this help message and exit
   -o OUT_DIR, --out-dir OUT_DIR
@@ -110,3 +109,35 @@ The blurring strength can take values between 0.0 and 1.0, with 0.0 meaning no b
 ## Multithreading
 
 Use `--single-core` to run on a single CPU core. Otherwise, the tool uses multithreading if the number of images to generate is larger than 100 (for smaller number of images the multithreading overhead is greater than the benefits - although the exact number is machine-specific). The number of threads is set to the number of CPU cores available.
+# Font png generator
+
+A python script creating fonts png file with random color. The script was created to produce datasets for the background removal task. Data produced can be directly used, for instance, to train a U2-Net neural network.
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+```bash
+$ py gen_fonts.py [-o] [-s SIZE] [-t TEXT] [-f FONTS]
+```
+
+Arguments:
+
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUT_DIR, --out-dir OUT_DIR
+                        output directory. Default: out
+  -s SIZE, --size SIZE
+                        Size of generated fonts min_size max_size step. Default: (30, 35, 1)
+  -p PHOTOS, --photos PHOTOS
+                        percentage of images to have photographs as background (should be between 0.0 and 1.0). Default: 0.0
+
+  -t TEXT, --text TEXT
+                        Text to generate. Default: random
+  -f FONTS, --fonts FONTS
+                        Number of fonts to generate. Default: 5
+```
