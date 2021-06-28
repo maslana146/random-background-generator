@@ -140,4 +140,6 @@ optional arguments:
                         Text to generate. Default: random
   -f FONTS, --fonts FONTS
                         Number of fonts to generate. Default: 5
+  -sf SYSTEM FONTS, --system-fonts 
+                        Use system fonts, default use fonts from folder " fonts_files". Default: Fasle
 ```
