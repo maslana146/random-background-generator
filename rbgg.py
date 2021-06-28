@@ -154,16 +154,39 @@ def check_color(color):
     return tuple(new_color)
 
 
+def fill_second_color(color, matrix):
+    shape = matrix.shape
+    if random() > 0.5:
+        split = randint(0, shape[0])
+        for i in range(shape[1]):
+            for j in range(split):
+                matrix[j, i] = color
+    else:
+        split = randint(0, shape[1])
+        for i in range(split):
+            for j in range(shape[0]):
+                matrix[j, i] = color
+    return matrix
+
+
 def get_random_solid_background(shape):
-    random_color = np.array(colorsys.hsv_to_rgb(
+    random_color1 = np.array(colorsys.hsv_to_rgb(
         random(), random(), random())) * 255
+    random_color2 = np.array(colorsys.hsv_to_rgb(
+        random(), random(), random())) * 255
+    while check_contrast(random_color2, random_color1, 3):
+        random_color1 = np.array(colorsys.hsv_to_rgb(
+            random(), random(), random())) * 255
+        random_color2 = np.array(colorsys.hsv_to_rgb(
+            random(), random(), random())) * 255
+
     if os.path.isdir(args.path):
         font_color = eval(file_name[:len(file_name) - 4].split('_')[-1])
-        while not check_contrast(random_color, font_color):
-            random_color = np.array(colorsys.hsv_to_rgb(
+        while not check_contrast(random_color1, font_color):
+            random_color1 = np.array(colorsys.hsv_to_rgb(
                 random(), random(), random())) * 255
-
-    return np.full((shape[0], shape[1], 3), random_color.astype(np.int32))
+    return fill_second_color(random_color2.astype(np.int32),
+                             np.full((shape[0], shape[1], 3), random_color1.astype(np.int32)))
 
 
 async def get_random_photo_background(shape):
