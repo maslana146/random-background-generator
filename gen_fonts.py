@@ -1,4 +1,5 @@
 import os
+import random
 import random as ran
 import string
 import argparse
@@ -50,11 +51,28 @@ def gen_fonts(output_dir, size_range, text, fonts_number):
             except OSError:
                 break
             width, height = int(width), int(height)
-            wm = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-            im = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+            wm = Image.new('RGBA', (width+10, height+10), (0, 0, 0, 0))
+            im = Image.new('RGBA', (width+10, height+10), (0, 0, 0, 0))
             draw = ImageDraw.Draw(wm)
             w, h = draw.textsize(text, font)
-            draw.text(((width - w) / 2, (height - h) / 2), text, color, font)
+            x, y = (width - w) / 2, (height - h) / 2
+            if args.border:
+                border_color = random_color()
+                # border_size = ran.randint(1,3)
+                border_size = 1
+                draw.text((x - border_size, y), text, font=font, fill=border_color)
+                draw.text((x + border_size, y), text, font=font, fill=border_color)
+                draw.text((x, y - border_size), text, font=font, fill=border_color)
+                draw.text((x, y + border_size), text, font=font, fill=border_color)
+
+                # thicker border
+                border_size += 2
+                draw.text((x - border_size, y - border_size), text, font=font, fill=border_color)
+                draw.text((x + border_size, y - border_size), text, font=font, fill=border_color)
+                draw.text((x - border_size, y + border_size), text, font=font, fill=border_color)
+                draw.text((x + border_size, y + border_size), text, font=font, fill=border_color)
+            draw.text((x, y), text, color, font)
+
             en = ImageEnhance.Brightness(wm)
             mask = en.enhance(1)
             im.paste(wm, (0, 0), mask)
@@ -73,6 +91,8 @@ parser.add_argument('-f', '--fonts', type=int, default=5,
                     help='Number of fonts to generate. Default: 5')
 parser.add_argument('-sf', '--system-fonts', action='store_true', default=False,
                     help='Use system fonts or fonts from folder. Default: False')
+parser.add_argument('-b', '--border', action='store_true', default=False,
+                    help='Add border to font. Default: False')
 
 if __name__ == '__main__':
     args = parser.parse_args()
