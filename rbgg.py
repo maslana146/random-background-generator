@@ -3,7 +3,7 @@ import numpy as np
 import os
 import argparse
 import colorsys
-from random import randint, uniform, random
+from random import randint, uniform, random, choice
 from multiprocessing import cpu_count, Pool
 from itertools import repeat
 import asyncio
@@ -20,6 +20,8 @@ parser.add_argument('-p', '--photos', type=float, default=0.,
                     help='percentage of images to have photographs as background (should be between 0.0 and 1.0). Default: 0.0')
 parser.add_argument('-m', '--mask', action='store_true',
                     help='whether to save masks. Default: false')
+parser.add_argument('-no', '--noise', action='store_true',
+                    help='add artificial noise. Default: False')
 parser.add_argument('-mo', '--mask-out-dir', default='mask',
                     help='mask output directory. Default: mask')
 parser.add_argument('-sl', '--scale-low', type=float,
@@ -226,7 +228,11 @@ async def generate_imgs(ids, solid_bg_number, generator, args):
         overlays[i].shape) for i, id in enumerate(ids) if id >= solid_bg_number])
     for i, background, overlay in zip(ids, backgrounds_solid + backgrounds_photo, overlays):
         combined_image, mask = combine(background, overlay)
-        cv2.imwrite(f'{args.out_dir}/{file_name[:len(file_name) - 4]}_{i}.png', combined_image)
+        if choice([True, False]):
+            cv2.imwrite(f'{args.out_dir}/{file_name[:len(file_name) - 4]}_{i}.jpg', combined_image,
+                        [int(cv2.IMWRITE_JPEG_QUALITY), randint(30, 120)])
+        else:
+            cv2.imwrite(f'{args.out_dir}/{file_name[:len(file_name) - 4]}_{i}.png', combined_image)
         if args.mask:
             cv2.imwrite(f'{args.mask_out_dir}/{file_name[:len(file_name) - 4]}_{i}.png', mask)
 

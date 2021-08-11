@@ -5,6 +5,8 @@ import string
 import argparse
 import matplotlib.font_manager as fm
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
+from nltk.corpus import words as wn
+# import nltk
 
 
 def get_random_string(length):
@@ -36,7 +38,7 @@ def gen_fonts(output_dir, size_range, text, fonts_number):
         function = get_fonts_from_dir('fonts_files')
     for font_name in function:
         if args.text is None:
-            text = get_random_string(ran.randint(5, 15))
+            text = random.choice(wn.words())
         else:
             text = text
         for size in range(size_range[0], size_range[1], size_range[2]):
@@ -51,14 +53,13 @@ def gen_fonts(output_dir, size_range, text, fonts_number):
             except OSError:
                 break
             width, height = int(width), int(height)
-            wm = Image.new('RGBA', (width+10, height+10), (0, 0, 0, 0))
-            im = Image.new('RGBA', (width+10, height+10), (0, 0, 0, 0))
+            wm = Image.new('RGBA', (width + 10, height + 10), (0, 0, 0, 0))
+            im = Image.new('RGBA', (width + 10, height + 10), (0, 0, 0, 0))
             draw = ImageDraw.Draw(wm)
             w, h = draw.textsize(text, font)
             x, y = (width - w) / 2, (height - h) / 2
             if args.border:
                 border_color = random_color()
-                # border_size = ran.randint(1,3)
                 border_size = 1
                 draw.text((x - border_size, y), text, font=font, fill=border_color)
                 draw.text((x + border_size, y), text, font=font, fill=border_color)
@@ -95,6 +96,7 @@ parser.add_argument('-b', '--border', action='store_true', default=False,
                     help='Add border to font. Default: False')
 
 if __name__ == '__main__':
+    # nltk.download()
     args = parser.parse_args()
     gen_fonts(args.out_dir, args.size, args.text, args.fonts)
     print(f"Fonts saved in {args.out_dir}.")

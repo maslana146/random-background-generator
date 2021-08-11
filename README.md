@@ -32,6 +32,7 @@ optional arguments:
   -p PHOTOS, --photos PHOTOS
                         percentage of images to have photographs as background (should be between 0.0 and 1.0). Default: 0.0
   -m, --mask            whether to save masks. Default: false
+  -no, --noise          add artificial noise. Default: False
   -mo MASK_OUT_DIR, --mask-out-dir MASK_OUT_DIR
                         mask output directory. Default: mask
   -sl SCALE_LOW, --scale-low SCALE_LOW
@@ -142,4 +143,6 @@ optional arguments:
                         Number of fonts to generate. Default: 5
   -sf SYSTEM FONTS, --system-fonts 
                         Use system fonts, default use fonts from folder " fonts_files". Default: Fasle
+  -b --border,          Add border to font. Default: False
+
 ```
