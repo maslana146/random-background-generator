@@ -6,7 +6,6 @@ import argparse
 import matplotlib.font_manager as fm
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 from nltk.corpus import words as wn
-# import nltk
 
 
 def get_random_string(length):
